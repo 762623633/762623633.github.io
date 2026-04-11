@@ -1,0 +1,2059 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#2c3e50" />
+    <title>线性规划工具（表格 + 单纯形迭代）</title>
+    <script src="https://cdn.jsdelivr.net/npm/javascript-lp-solver@0.4.24/prod/solver.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        font-family: system-ui, "Segoe UI", sans-serif;
+        margin: 0;
+        background: #f0f2f5;
+        color: #1a1a1a;
+        min-width: 0;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      header {
+        background: #2c3e50;
+        color: #fff;
+        padding: 0.75rem 1.25rem;
+        padding-left: max(1.25rem, env(safe-area-inset-left));
+        padding-right: max(1.25rem, env(safe-area-inset-right));
+      }
+      header h1 {
+        font-size: 1.1rem;
+        margin: 0;
+        font-weight: 600;
+        line-height: 1.3;
+      }
+      header p {
+        margin: 0.35rem 0 0;
+        font-size: 0.82rem;
+        opacity: 0.92;
+        line-height: 1.45;
+        word-wrap: break-word;
+      }
+      header a {
+        word-break: break-all;
+      }
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 1rem;
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+        width: 100%;
+        min-width: 0;
+      }
+      section {
+        background: #fff;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      section h2 {
+        font-size: 1rem;
+        margin: 0 0 0.75rem;
+        color: #2c3e50;
+      }
+      textarea.mono {
+        width: 100%;
+        min-height: 140px;
+        font-family: Consolas, ui-monospace, monospace;
+        font-size: 12px;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+      }
+      textarea.small {
+        min-height: 56px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        margin: 0.5rem 0;
+      }
+      button {
+        cursor: pointer;
+        padding: 0.4rem 0.85rem;
+        border-radius: 6px;
+        border: 1px solid #34495e;
+        background: #3498db;
+        color: #fff;
+        font-size: 0.9rem;
+      }
+      button.secondary {
+        background: #95a5a6;
+        border-color: #7f8c8d;
+      }
+      #output {
+        font-size: 12px;
+        background: #fafafa;
+        color: #1a1a1a;
+        padding: 12px;
+        border-radius: 8px;
+        min-height: 200px;
+        max-height: min(55vh, 32rem);
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid #ddd;
+      }
+      #output h3 {
+        font-size: 1rem;
+        margin: 0 0 0.75rem;
+        color: #2c3e50;
+      }
+      #output .out-block {
+        margin-bottom: 1.25rem;
+      }
+      #output .tab-title {
+        font-size: 0.88rem;
+        margin: 0 0 0.35rem;
+        color: #34495e;
+        font-weight: 600;
+      }
+      #output .out-pre {
+        white-space: pre-wrap;
+        font-family: Consolas, ui-monospace, monospace;
+        font-size: 11px;
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 10px;
+        border-radius: 6px;
+        margin: 0.35rem 0;
+      }
+      #output .out-line {
+        white-space: pre-wrap;
+        font-family: Consolas, ui-monospace, monospace;
+        font-size: 11px;
+        margin: 0.15rem 0;
+      }
+      table.out-tableau {
+        border-collapse: collapse;
+        font-size: 12px;
+        margin: 0.25rem 0 0.75rem;
+        background: #fff;
+      }
+      table.out-tableau th,
+      table.out-tableau td {
+        border: 1px solid #95a5a6;
+        padding: 4px 8px;
+        text-align: right;
+      }
+      table.out-tableau thead th {
+        background: #34495e;
+        color: #fff;
+        text-align: center;
+      }
+      table.out-tableau tbody th {
+        background: #ecf0f1;
+        text-align: left;
+      }
+      table.out-tableau tr.obj-row th,
+      table.out-tableau tr.obj-row td {
+        background: #fff8e6;
+      }
+      table.out-tableau td.pivot {
+        background: #ffeaa7;
+        font-weight: 600;
+      }
+      table.out-tableau .pivot-brak {
+        color: #c0392b;
+      }
+      label.chk {
+        display: block;
+        margin: 0.25rem 0;
+        font-size: 0.88rem;
+      }
+      .hint {
+        font-size: 0.82rem;
+        color: #555;
+        margin-top: 0.35rem;
+        line-height: 1.45;
+      }
+      input.in {
+        width: 4.5rem;
+        padding: 4px 6px;
+        box-sizing: border-box;
+      }
+      input.inw {
+        width: 14rem;
+      }
+      #status {
+        font-size: 0.85rem;
+        color: #666;
+        margin: 0.5rem 0;
+      }
+      table.lpgrid {
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        margin: 0.5rem 0;
+      }
+      table.lpgrid th,
+      table.lpgrid td {
+        border: 1px solid #bdc3c7;
+        padding: 4px 6px;
+        text-align: center;
+      }
+      table.lpgrid th {
+        background: #ecf0f1;
+        color: #2c3e50;
+        font-weight: 600;
+      }
+      table.lpgrid input {
+        width: 3.5rem;
+        text-align: center;
+        padding: 4px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      table.lpgrid select {
+        padding: 3px;
+        border-radius: 4px;
+      }
+      table.lpgrid .rhs {
+        width: 4rem;
+      }
+      .lp-toolbar {
+        margin: 0.5rem 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      table.tp-unified th:last-child,
+      table.tp-unified td:last-child:not(.tp-corner) {
+        background: #fffbf0;
+      }
+      table.tp-unified tr:last-child th,
+      table.tp-unified tr:last-child td:not(.tp-corner) {
+        background: #f0f8ff;
+      }
+      table.tp-unified tr:last-child td.tp-corner {
+        background: #ecf0f1;
+        color: #7f8c8d;
+        text-align: center;
+      }
+      table.post-opt-main td.post-desc {
+        text-align: left;
+        font-size: 0.84rem;
+        line-height: 1.4;
+      }
+      table.post-params th {
+        white-space: nowrap;
+      }
+      table.post-params input.inw {
+        width: 8rem;
+        max-width: 100%;
+      }
+      #post_aux_wrap {
+        margin-top: 0.75rem;
+      }
+      #output p.hint-out {
+        margin: 0.35rem 0;
+        color: #555;
+        font-size: 0.82rem;
+      }
+      #output p.err-out {
+        margin: 0.35rem 0;
+        color: #c0392b;
+        font-size: 0.88rem;
+      }
+      #output .out-block.tableau-block {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+      }
+      #output .out-block:has(table.out-tableau) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+      }
+      .scroll-x {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+        margin: 0.35rem 0;
+      }
+      .scroll-x table {
+        max-width: none;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 0.55rem 0.65rem;
+        }
+        header {
+          padding: 0.65rem 0.75rem;
+          padding-left: max(0.75rem, env(safe-area-inset-left));
+          padding-right: max(0.75rem, env(safe-area-inset-right));
+        }
+        header h1 {
+          font-size: 0.98rem;
+        }
+        header p {
+          font-size: 0.78rem;
+        }
+        section {
+          padding: 0.7rem 0.65rem;
+          margin-bottom: 0.65rem;
+          border-radius: 8px;
+        }
+        section h2 {
+          font-size: 0.95rem;
+        }
+        .hint {
+          font-size: 0.78rem;
+        }
+        button {
+          min-height: 44px;
+          padding: 0.45rem 0.9rem;
+          font-size: 1rem;
+          touch-action: manipulation;
+        }
+        .lp-toolbar {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.5rem;
+        }
+        .lp-toolbar label {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 0.35rem;
+          justify-content: flex-start;
+        }
+        .lp-toolbar button {
+          width: 100%;
+        }
+        .row {
+          gap: 0.4rem;
+        }
+        input.in,
+        input.inw,
+        table.lpgrid input,
+        table.lpgrid select,
+        .post-params input,
+        #post_aux_wrap input,
+        #post_aux_wrap select {
+          font-size: 16px;
+          min-height: 42px;
+        }
+        input.in {
+          width: auto;
+          min-width: 3.25rem;
+          flex: 0 0 auto;
+        }
+        input.inw {
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+        }
+        table.lpgrid input {
+          width: 3rem;
+          min-width: 2.75rem;
+        }
+        table.lpgrid .rhs {
+          width: auto;
+          min-width: 3.25rem;
+        }
+        table.out-tableau {
+          font-size: 11px;
+        }
+        table.out-tableau th,
+        table.out-tableau td {
+          padding: 3px 5px;
+        }
+        #output {
+          max-height: min(48vh, 28rem);
+          padding: 10px;
+          font-size: 11px;
+        }
+        .post-opt-main td.post-desc {
+          font-size: 0.78rem;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+        table.post-opt-main th:first-child {
+          width: 2.75rem;
+        }
+      }
+
+      @media (max-width: 400px) {
+        header h1 {
+          font-size: 0.9rem;
+        }
+        table.lpgrid {
+          font-size: 0.8rem;
+        }
+        table.lpgrid input {
+          width: 2.65rem;
+          min-width: 2.5rem;
+          padding: 4px 2px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>线性规划工具 · 表格录入 + 单纯形表迭代（纯 JS）</h1>
+      <p>
+        <strong>仅浏览器</strong>：标准 LP
+        与运输问题均用<strong>表格</strong>录入；单纯形迭代与运输结果以
+        <strong>HTML 表格</strong>展示，<strong>主元</strong>用方括号
+        <code>[]</code> 标出。 同时可用
+        <code>javascript-lp-solver</code> 对照最优值。
+      </p>
+    </header>
+    <main>
+      <p id="status"></p>
+
+      <section>
+        <h2>标准线性规划（表格）</h2>
+        <p class="hint">
+          选择 max / min；第一行为目标系数 c；下面每行为约束系数、关系符、右端
+          b。支持 &lt;=、&gt;=、=（两阶段法，人工变量在表中会标注）。
+        </p>
+        <div class="row">
+          <label
+            ><input type="radio" name="obj_type" value="max" checked />
+            最大化</label
+          >
+          <label
+            ><input type="radio" name="obj_type" value="min" /> 最小化</label
+          >
+        </div>
+        <div class="lp-toolbar">
+          <label
+            >变量数 n
+            <input
+              type="number"
+              id="lp_n"
+              class="in"
+              min="1"
+              max="20"
+              value="3"
+          /></label>
+          <label
+            >约束数 m
+            <input
+              type="number"
+              id="lp_m"
+              class="in"
+              min="1"
+              max="30"
+              value="3"
+          /></label>
+          <button type="button" id="btn_lp_resize" class="secondary">
+            应用行列数
+          </button>
+          <button type="button" id="btn_lp_fill">填入示例</button>
+          <button type="button" id="btn_lp_solve">求解并输出单纯形迭代</button>
+        </div>
+        <div id="lp_table_wrap" class="scroll-x"></div>
+      </section>
+
+      <section>
+        <h2>运输问题（表格）</h2>
+        <p class="hint">
+          设置产地数 <code>m</code>、销地数
+          <code>n</code>，在<strong>同一张表</strong>中填写：主体为运价
+          c<sub>ij</sub>，<strong>最右列</strong>为产量
+          a<sub>i</sub>，<strong>最下行</strong>为销量
+          b<sub>j</sub>（右下角留空）。总产与总销可不等，程序按原逻辑平衡。
+        </p>
+        <div class="lp-toolbar">
+          <label
+            >产地 m
+            <input
+              type="number"
+              id="tp_m"
+              class="in"
+              min="1"
+              max="25"
+              value="2"
+          /></label>
+          <label
+            >销地 n
+            <input
+              type="number"
+              id="tp_n"
+              class="in"
+              min="1"
+              max="25"
+              value="3"
+          /></label>
+          <button type="button" id="btn_tp_resize" class="secondary">
+            应用规模
+          </button>
+          <button type="button" id="btn_tp_fill">填入示例</button>
+          <button type="button" id="btn_tp_solve">求解</button>
+        </div>
+        <div id="tp_table_wrap" class="scroll-x"></div>
+      </section>
+
+      <section>
+        <h2>灵敏度与后优化</h2>
+        <p class="hint">
+          须先成功求解<strong>标准 LP</strong
+          >（与上方表格单纯形结果一致）。下表可多选，按<strong>由上到下</strong>顺序执行。(3)(4)
+          的列数随当前模型 n、m 自动更新（求解成功后会刷新）。
+        </p>
+        <div class="scroll-x">
+          <table class="lpgrid post-opt-main">
+            <thead>
+              <tr>
+                <th style="width: 3rem">执行</th>
+                <th>说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox" id="chk_sa" /></td>
+                <td class="post-desc">
+                  灵敏度：所有 RHS 同时乘以 (1±10%)、(1±20%)
+                  后重求，观察目标值变化。
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" id="chk_c_range" /></td>
+                <td class="post-desc">
+                  (1) 求 c<sub>j</sub>
+                  的区间，使<strong>当前最优解向量</strong>不变（数值二分，依赖
+                  javascript-lp-solver）。
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" id="chk_c_solve" /></td>
+                <td class="post-desc">
+                  (1) 将 c<sub>j</sub> 改为下表中的「新 c<sub>j</sub>」后重求。
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" id="chk_b_range" /></td>
+                <td class="post-desc">
+                  (2) b<sub>i</sub>
+                  保持最优基的区间：本页不计算（需桌面单纯形基信息）。
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" id="chk_b_solve" /></td>
+                <td class="post-desc">
+                  (2) 将 b<sub>i</sub> 改为下表中的「新 b<sub>i</sub>」后重求。
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" id="chk_new_row" /></td>
+                <td class="post-desc">
+                  (3) 增加一条新约束（见下方表格）并重求。
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" id="chk_new_col" /></td>
+                <td class="post-desc">
+                  (4) 增加一个新变量：各约束系数 P<sub>i</sub> 与目标
+                  c（见下方表格）并重求。
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hint" style="margin-top: 0.75rem">
+          与 (1)(2) 相关的<strong>下标与数值</strong>（勾选对应项时必填）。
+        </p>
+        <div class="scroll-x">
+          <table class="lpgrid post-params">
+            <tbody>
+              <tr>
+                <th>变量下标 j</th>
+                <td>
+                  <input
+                    type="number"
+                    id="post_j"
+                    class="in"
+                    min="1"
+                    step="1"
+                    value="1"
+                  />
+                </td>
+                <th>新 c<sub>j</sub></th>
+                <td>
+                  <input
+                    type="text"
+                    id="post_new_c"
+                    class="inw"
+                    placeholder="数值"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th>约束下标 i</th>
+                <td>
+                  <input
+                    type="number"
+                    id="post_i"
+                    class="in"
+                    min="1"
+                    step="1"
+                    value="1"
+                  />
+                </td>
+                <th>新 b<sub>i</sub></th>
+                <td>
+                  <input
+                    type="text"
+                    id="post_new_b"
+                    class="inw"
+                    placeholder="数值"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="post_aux_wrap" class="scroll-x"></div>
+        <div class="lp-toolbar" style="margin-top: 0.75rem">
+          <button type="button" id="btn_post">执行已勾选</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>输出</h2>
+        <div id="output"></div>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        "use strict";
+
+        const TOL = 1e-9;
+        const EPS = 1e-12;
+        const OBJ = "obj";
+
+        let lastLp = null;
+
+        const $ = (id) => document.getElementById(id);
+        const out = $("output");
+        const statusEl = $("status");
+
+        function escapeHtml(s) {
+          return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        function clearOut() {
+          out.innerHTML = "";
+        }
+
+        function appendHtml(html) {
+          out.insertAdjacentHTML("beforeend", html);
+        }
+
+        /** 纯文本块（灵敏度等多段拼接） */
+        function append(t) {
+          const d = document.createElement("div");
+          d.className = "out-line";
+          d.textContent = t;
+          out.appendChild(d);
+        }
+
+        function numStr(x) {
+          if (typeof x !== "number" || !isFinite(x)) return String(x);
+          const s = x.toFixed(10).replace(/\.?0+$/, "");
+          return s === "-0" ? "0" : s;
+        }
+
+        const solver =
+          typeof window !== "undefined" && window.solver ? window.solver : null;
+
+        function buildJsLpModel(c, A_ub, b_ub, A_eq, b_eq, maximize) {
+          const n = c.length;
+          const constraints = {};
+          const variables = {};
+          for (let j = 0; j < n; j++) {
+            variables["x" + j] = {};
+            variables["x" + j][OBJ] = c[j];
+          }
+          let r = 0;
+          if (A_ub && b_ub) {
+            for (let i = 0; i < A_ub.length; i++) {
+              const name = "r" + r++;
+              constraints[name] = { max: b_ub[i] };
+              for (let j = 0; j < n; j++) {
+                const coef = A_ub[i][j];
+                if (Math.abs(coef) > EPS) variables["x" + j][name] = coef;
+              }
+            }
+          }
+          if (A_eq && b_eq) {
+            for (let i = 0; i < A_eq.length; i++) {
+              const name = "r" + r++;
+              constraints[name] = { equal: b_eq[i] };
+              for (let j = 0; j < n; j++) {
+                const coef = A_eq[i][j];
+                if (Math.abs(coef) > EPS) variables["x" + j][name] = coef;
+              }
+            }
+          }
+          return {
+            optimize: OBJ,
+            opType: maximize ? "max" : "min",
+            constraints,
+            variables,
+          };
+        }
+
+        function runSolve(model) {
+          try {
+            return solver.Solve(model);
+          } catch (e) {
+            return {
+              feasible: false,
+              bounded: true,
+              result: 0,
+              _err: String(e.message || e),
+            };
+          }
+        }
+
+        function generalToLinprog(c, A, b, signs) {
+          const n = c.length;
+          const A_ub = [],
+            b_ub = [],
+            A_eq = [],
+            b_eq = [];
+          for (let i = 0; i < signs.length; i++) {
+            const row = A[i].slice();
+            const rhs = b[i];
+            const sign = signs[i];
+            if (sign === "<=") {
+              A_ub.push(row.map((x) => x));
+              b_ub.push(rhs);
+            } else if (sign === ">=") {
+              A_ub.push(row.map((x) => -x));
+              b_ub.push(-rhs);
+            } else {
+              A_eq.push(row.map((x) => x));
+              b_eq.push(rhs);
+            }
+          }
+          return {
+            c: c.slice(),
+            A_ub: A_ub.length ? A_ub : null,
+            b_ub: b_ub.length ? b_ub : null,
+            A_eq: A_eq.length ? A_eq : null,
+            b_eq: b_eq.length ? b_eq : null,
+          };
+        }
+
+        function extractX(res, n) {
+          const x = new Array(n).fill(0);
+          for (let j = 0; j < n; j++) {
+            const key = "x" + j;
+            if (
+              Object.prototype.hasOwnProperty.call(res, key) &&
+              typeof res[key] === "number"
+            )
+              x[j] = res[key];
+          }
+          return x;
+        }
+
+        function printSolution(title, res, n) {
+          const sep = "=".repeat(60);
+          const lines = [sep, title, sep];
+          if (res._err) {
+            lines.push("求解异常: " + res._err);
+            appendHtml(
+              '<div class="out-block"><pre class="out-pre">' +
+                escapeHtml(lines.join("\n")) +
+                "</pre></div>",
+            );
+            return false;
+          }
+          if (!res.feasible) {
+            lines.push("无可行解");
+            appendHtml(
+              '<div class="out-block"><pre class="out-pre">' +
+                escapeHtml(lines.join("\n")) +
+                "</pre></div>",
+            );
+            return false;
+          }
+          if (res.bounded === false) {
+            lines.push("目标无界");
+            appendHtml(
+              '<div class="out-block"><pre class="out-pre">' +
+                escapeHtml(lines.join("\n")) +
+                "</pre></div>",
+            );
+            return false;
+          }
+          lines.push("最优目标值 Z* = " + numStr(res.result));
+          const x = extractX(res, n);
+          for (let i = 0; i < n; i++)
+            lines.push("x" + (i + 1) + " = " + numStr(x[i]));
+          appendHtml(
+            '<div class="out-block"><pre class="out-pre">' +
+              escapeHtml(lines.join("\n")) +
+              "</pre></div>",
+          );
+          return true;
+        }
+
+        function transportToLp(costs, supply, demand) {
+          let m = costs.length,
+            n = costs[0].length;
+          let C = costs.map((r) => r.slice());
+          let s = supply.slice();
+          let d = demand.slice();
+          const ts = s.reduce((a, b) => a + b, 0);
+          const td = d.reduce((a, b) => a + b, 0);
+          if (ts > td) {
+            C = C.map((row) => row.concat(0));
+            d = d.concat(ts - td);
+            n += 1;
+          } else if (td > ts) {
+            C.push(new Array(n).fill(0));
+            s = s.concat(td - ts);
+            m += 1;
+          }
+          const nv = m * n;
+          const c = new Array(nv);
+          let k = 0;
+          for (let i = 0; i < m; i++)
+            for (let j = 0; j < n; j++) c[k++] = C[i][j];
+          const A_eq = [],
+            b_eq = [];
+          for (let i = 0; i < m; i++) {
+            const row = new Array(nv).fill(0);
+            for (let j = 0; j < n; j++) row[i * n + j] = 1;
+            A_eq.push(row);
+            b_eq.push(s[i]);
+          }
+          for (let j = 0; j < n; j++) {
+            const row = new Array(nv).fill(0);
+            for (let i = 0; i < m; i++) row[i * n + j] = 1;
+            A_eq.push(row);
+            b_eq.push(d[j]);
+          }
+          return {
+            c,
+            A_ub: null,
+            b_ub: null,
+            A_eq,
+            b_eq,
+            maximize: false,
+            dim: { m, n },
+          };
+        }
+
+        function sameSolution(x1, x2) {
+          if (!x1 || !x2 || x1.length !== x2.length) return false;
+          for (let i = 0; i < x1.length; i++)
+            if (Math.abs(x1[i] - x2[i]) > 1e-6) return false;
+          return true;
+        }
+
+        function sensitivityAnalysisJs(c, A_ub, b_ub, A_eq, b_eq, maximize) {
+          const baseModel = buildJsLpModel(c, A_ub, b_ub, A_eq, b_eq, maximize);
+          const base = runSolve(baseModel);
+          if (!base.feasible || base.bounded === false) {
+            appendHtml(
+              '<div class="out-block"><h4 class="tab-title">灵敏度分析（RHS 扰动）</h4><p class="hint-out">基准模型未得最优可行解：feasible=' +
+                escapeHtml(String(base.feasible)) +
+                "，bounded=" +
+                escapeHtml(String(base.bounded)) +
+                "</p></div>",
+            );
+            return;
+          }
+          const baseObj = base.result;
+          let body = "";
+          for (const ratio of [-0.2, -0.1, 0.1, 0.2]) {
+            const b_ubN = b_ub ? b_ub.map((v) => v * (1 + ratio)) : null;
+            const b_eqN = b_eq ? b_eq.map((v) => v * (1 + ratio)) : null;
+            const subModel = buildJsLpModel(
+              c,
+              A_ub,
+              b_ubN,
+              A_eq,
+              b_eqN,
+              maximize,
+            );
+            const res = runSolve(subModel);
+            const pct =
+              (ratio >= 0 ? "+" : "") + (ratio * 100).toFixed(0) + "%";
+            if (res.feasible && res.bounded !== false) {
+              const dz = res.result - baseObj;
+              body +=
+                "<tr><td>" +
+                escapeHtml(pct) +
+                "</td><td>" +
+                escapeHtml(numStr(res.result)) +
+                "</td><td>" +
+                escapeHtml(numStr(dz)) +
+                "</td></tr>";
+            } else {
+              body +=
+                "<tr><td>" +
+                escapeHtml(pct) +
+                '</td><td colspan="2">失败（feasible=' +
+                escapeHtml(String(res.feasible)) +
+                "）</td></tr>";
+            }
+          }
+          appendHtml(
+            '<div class="out-block"><h4 class="tab-title">灵敏度分析（RHS 统一比例）</h4>' +
+              '<p class="hint-out">对全部 RHS 同时乘以 (1+比例)。基准目标值 <strong>Z*</strong> = ' +
+              escapeHtml(numStr(baseObj)) +
+              "</p>" +
+              '<table class="out-tableau"><thead><tr><th>扰动比例</th><th>新目标值</th><th>变化量 ΔZ</th></tr></thead><tbody>' +
+              body +
+              "</tbody></table></div>",
+          );
+        }
+
+        function solveFromRawLp(parsed, updateLastLp) {
+          if (updateLastLp === undefined) updateLastLp = true;
+          const { c, A, b, signs, maximize } = parsed;
+          if (!solver || typeof solver.Solve !== "function") {
+            append("（javascript-lp-solver 未加载，无对照求解。）\n");
+            return;
+          }
+          const g = generalToLinprog(c, A, b, signs);
+          const model = buildJsLpModel(
+            g.c,
+            g.A_ub,
+            g.b_ub,
+            g.A_eq,
+            g.b_eq,
+            maximize,
+          );
+          const res = runSolve(model);
+          printSolution("javascript-lp-solver 结果", res, c.length);
+          if (!updateLastLp) return;
+          if (res.feasible && res.bounded !== false) {
+            const x = extractX(res, c.length);
+            lastLp = {
+              c: c.slice(),
+              A: A.map((r) => r.slice()),
+              b: b.slice(),
+              signs: signs.slice(),
+              maximize,
+              x,
+            };
+          } else lastLp = null;
+        }
+
+        function coefficientRangeSameSolutionJs(j) {
+          const data = lastLp;
+          const c = data.c.slice();
+          const A = data.A.map((r) => r.slice());
+          const b = data.b.slice();
+          const signs = data.signs.slice();
+          const maximize = data.maximize;
+
+          function baseSolve() {
+            const g = generalToLinprog(c, A, b, signs);
+            return runSolve(
+              buildJsLpModel(g.c, g.A_ub, g.b_ub, g.A_eq, g.b_eq, maximize),
+            );
+          }
+          const base = baseSolve();
+          if (!base.feasible || base.bounded === false) {
+            appendHtml(
+              '<div class="out-block"><h4 class="tab-title">c<sub>' +
+                (j + 1) +
+                '</sub> 区间（最优解不变）</h4><p class="hint-out">基准问题求解失败。</p></div>',
+            );
+            return;
+          }
+          const xBase = extractX(base, c.length);
+          const c0 = c[j];
+
+          function valid(val) {
+            const cnew = c.slice();
+            cnew[j] = val;
+            const g = generalToLinprog(cnew, A, b, signs);
+            const r = runSolve(
+              buildJsLpModel(g.c, g.A_ub, g.b_ub, g.A_eq, g.b_eq, maximize),
+            );
+            if (!r.feasible || r.bounded === false) return false;
+            return sameSolution(extractX(r, c.length), xBase);
+          }
+
+          let step = 1,
+            lo = c0;
+          while (valid(lo - step)) {
+            lo -= step;
+            step *= 2;
+            if (step > 1e6) break;
+          }
+          let leftL = lo - step,
+            leftR = lo;
+          for (let t = 0; t < 40; t++) {
+            const mid = (leftL + leftR) / 2;
+            if (valid(mid)) leftR = mid;
+            else leftL = mid;
+          }
+          const lower = leftR;
+
+          step = 1;
+          let hi = c0;
+          while (valid(hi + step)) {
+            hi += step;
+            step *= 2;
+            if (step > 1e6) break;
+          }
+          let rightL = hi,
+            rightR = hi + step;
+          for (let t = 0; t < 40; t++) {
+            const mid = (rightL + rightR) / 2;
+            if (valid(mid)) rightL = mid;
+            else rightR = mid;
+          }
+          const upper = rightL;
+          appendHtml(
+            '<div class="out-block"><h4 class="tab-title">c<sub>' +
+              (j + 1) +
+              "</sub> 区间（当前最优解 <strong>x*</strong> 不变）</h4>" +
+              '<p class="hint-out">当 c<sub>' +
+              (j + 1) +
+              "</sub> ∈ [" +
+              escapeHtml(numStr(lower)) +
+              ", " +
+              escapeHtml(numStr(upper)) +
+              "] 时，最优解向量保持不变（数值判定）。</p></div>",
+          );
+        }
+
+        function rhsRangeStub() {
+          appendHtml(
+            '<div class="out-block"><h4 class="tab-title">b<sub>i</sub> 保持最优基的区间</h4>' +
+              '<p class="hint-out">(2) 该项需桌面版单纯形输出的基信息；本纯 JS 页不计算，仅作占位说明。</p></div>',
+          );
+        }
+
+        function getPostVarCount() {
+          if (lastLp && lastLp.c && lastLp.c.length) return lastLp.c.length;
+          return Math.max(1, Math.min(20, parseInt($("lp_n").value, 10) || 3));
+        }
+
+        function getPostConstrCount() {
+          if (lastLp && lastLp.b && lastLp.b.length) return lastLp.b.length;
+          return Math.max(1, Math.min(30, parseInt($("lp_m").value, 10) || 3));
+        }
+
+        function renderPostAuxTables() {
+          const wrap = $("post_aux_wrap");
+          if (!wrap) return;
+          const nn = getPostVarCount();
+          const mm = getPostConstrCount();
+          let h =
+            '<p class="hint">(3) 新约束（当前 n = ' +
+            nn +
+            "；与主表变量数一致）</p>" +
+            '<table class="lpgrid"><thead><tr><th></th>';
+          for (let j = 0; j < nn; j++) h += "<th>x" + (j + 1) + "</th>";
+          h +=
+            '<th>关系</th><th class="rhs">b</th></tr></thead><tbody><tr><th>新约束</th>';
+          for (let j = 0; j < nn; j++) {
+            h +=
+              '<td><input type="text" class="post_nr_a" data-j="' +
+              j +
+              '" value="0" /></td>';
+          }
+          h +=
+            '<td><select id="post_nr_sign"><option value="<=">&lt;=</option><option value=">=">&gt;=</option><option value="=">=</option></select></td>' +
+            '<td><input type="text" id="post_nr_b" class="rhs" value="0" /></td></tr></tbody></table>';
+
+          h +=
+            '<p class="hint" style="margin-top:0.75rem">(4) 新变量：各约束系数 P<sub>i</sub>（当前 m = ' +
+            mm +
+            "）及在目标中的系数 c</p>" +
+            '<table class="lpgrid"><thead><tr><th>约束 i</th><th>系数 P<sub>i</sub></th></tr></thead><tbody>';
+          for (let i = 0; i < mm; i++) {
+            h +=
+              "<tr><th>约束 " +
+              (i + 1) +
+              '</th><td><input type="text" class="post_p_i" data-i="' +
+              i +
+              '" value="0" /></td></tr>';
+          }
+          h +=
+            '<tr><th>新变量 c</th><td><input type="text" id="post_new_cvar" class="inw" placeholder="目标系数" /></td></tr></tbody></table>';
+          wrap.innerHTML = h;
+        }
+
+        function readPostNewRowFromTable(nn) {
+          const row = [];
+          for (let j = 0; j < nn; j++) {
+            const el = document.querySelector(
+              '#post_aux_wrap .post_nr_a[data-j="' + j + '"]',
+            );
+            const v = Number(String(el && el.value).replace(/,/g, ""));
+            if (!isFinite(v))
+              throw new Error("新约束系数列 " + (j + 1) + " 无效");
+            row.push(v);
+          }
+          const sel = $("post_nr_sign");
+          const sign = sel ? sel.value : "<=";
+          const bel = $("post_nr_b");
+          const rhs = Number(String(bel && bel.value).replace(/,/g, ""));
+          if (!isFinite(rhs)) throw new Error("新约束 b 无效");
+          return { row, sign, rhs };
+        }
+
+        function readPostNewColFromTable(mm) {
+          const p = [];
+          for (let i = 0; i < mm; i++) {
+            const el = document.querySelector(
+              '#post_aux_wrap .post_p_i[data-i="' + i + '"]',
+            );
+            const v = Number(String(el && el.value).replace(/,/g, ""));
+            if (!isFinite(v))
+              throw new Error("新变量在约束 " + (i + 1) + " 的系数无效");
+            p.push(v);
+          }
+          const cnew = $("post_new_cvar");
+          const t = cnew && cnew.value ? cnew.value.trim() : "";
+          if (!t) throw new Error("请填写新变量目标系数 c");
+          const cv = Number(String(t).replace(/,/g, ""));
+          if (!isFinite(cv)) throw new Error("新变量 c 无效");
+          return { p, cvar: cv };
+        }
+
+        /* ---------- 表格 UI ---------- */
+        function renderLpTable() {
+          const n = Math.max(
+            1,
+            Math.min(20, parseInt($("lp_n").value, 10) || 3),
+          );
+          const m = Math.max(
+            1,
+            Math.min(30, parseInt($("lp_m").value, 10) || 3),
+          );
+          $("lp_n").value = String(n);
+          $("lp_m").value = String(m);
+          const wrap = $("lp_table_wrap");
+          let html = "<table class='lpgrid'><thead><tr><th></th>";
+          for (let j = 0; j < n; j++) html += "<th>x" + (j + 1) + "</th>";
+          html += "<th>关系</th><th class='rhs'>b</th></tr></thead><tbody>";
+          html += "<tr><th>c</th>";
+          for (let j = 0; j < n; j++)
+            html +=
+              "<td><input type='text' class='c_cell' data-j='" +
+              j +
+              "' value='0' /></td>";
+          html += "<td>—</td><td>—</td></tr>";
+          for (let i = 0; i < m; i++) {
+            html += "<tr><th>约束" + (i + 1) + "</th>";
+            for (let j = 0; j < n; j++) {
+              html +=
+                "<td><input type='text' class='a_cell' data-i='" +
+                i +
+                "' data-j='" +
+                j +
+                "' value='0' /></td>";
+            }
+            html +=
+              "<td><select class='sign_cell' data-i='" +
+              i +
+              "'><option value='<='>&lt;=</option><option value='>='>&gt;=</option><option value='='>=</option></select></td>";
+            html +=
+              "<td><input type='text' class='b_cell rhs' data-i='" +
+              i +
+              "' value='0' /></td></tr>";
+          }
+          html += "</tbody></table>";
+          wrap.innerHTML = html;
+        }
+
+        function readLpFromTable() {
+          const rows = document.querySelectorAll("#lp_table_wrap .a_cell");
+          if (!rows.length) throw new Error("请先点击「应用行列数」生成表格");
+          const n = parseInt($("lp_n").value, 10) || 3;
+          const m = parseInt($("lp_m").value, 10) || 3;
+          const c = [];
+          for (let j = 0; j < n; j++) {
+            const el = document.querySelector(
+              "#lp_table_wrap .c_cell[data-j='" + j + "']",
+            );
+            c.push(Number(String(el && el.value).replace(/,/g, "")));
+            if (!isFinite(c[j]))
+              throw new Error("目标系数 c" + (j + 1) + " 不是有效数字");
+          }
+          const A = [],
+            b = [],
+            signs = [];
+          for (let i = 0; i < m; i++) {
+            const row = [];
+            for (let j = 0; j < n; j++) {
+              const el = document.querySelector(
+                "#lp_table_wrap .a_cell[data-i='" +
+                  i +
+                  "'][data-j='" +
+                  j +
+                  "']",
+              );
+              row.push(Number(String(el && el.value).replace(/,/g, "")));
+              if (!isFinite(row[j]))
+                throw new Error(
+                  "约束 " + (i + 1) + " 系数 (列" + (j + 1) + ") 无效",
+                );
+            }
+            const sel = document.querySelector(
+              "#lp_table_wrap .sign_cell[data-i='" + i + "']",
+            );
+            const sign = sel ? sel.value : "<=";
+            const bel = document.querySelector(
+              "#lp_table_wrap .b_cell[data-i='" + i + "']",
+            );
+            const rhs = Number(String(bel && bel.value).replace(/,/g, ""));
+            if (!isFinite(rhs))
+              throw new Error("约束 " + (i + 1) + " 的 b 无效");
+            A.push(row);
+            signs.push(sign);
+            b.push(rhs);
+          }
+          const maxRadio = document.querySelector(
+            "input[name='obj_type'][value='max']",
+          );
+          const maximize = maxRadio && maxRadio.checked;
+          return { c, A, b, signs, maximize };
+        }
+
+        function fillLpTableExample() {
+          $("lp_n").value = "3";
+          $("lp_m").value = "3";
+          renderLpTable();
+          const setC = [3, 2, 1];
+          for (let j = 0; j < 3; j++) {
+            const el = document.querySelector(".c_cell[data-j='" + j + "']");
+            if (el) el.value = String(setC[j]);
+          }
+          const coefs = [
+            [1, 1, 0],
+            [0, 1, 1],
+            [1, 0, 1],
+          ];
+          const bs = [4, 6, 5];
+          for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+              const el = document.querySelector(
+                ".a_cell[data-i='" + i + "'][data-j='" + j + "']",
+              );
+              if (el) el.value = String(coefs[i][j]);
+            }
+            const bel = document.querySelector(".b_cell[data-i='" + i + "']");
+            if (bel) bel.value = String(bs[i]);
+          }
+          const maxRadio = document.querySelector(
+            "input[name='obj_type'][value='max']",
+          );
+          if (maxRadio) maxRadio.checked = true;
+          renderPostAuxTables();
+        }
+
+        /* ---------- 两阶段单纯形 ----------
+     约束行：Ax + 松弛/剩余/人工 = b（b 已规范为非负）。
+     第一阶段：极大化 G = -W（W 为人工变量之和），G 行检验数 > 0 可进基。
+     第二阶段：极大化 z（min 原问题则对 c 取反后按 max 迭代，最后还原目标值）。
+  */
+        function buildTableau(parsed) {
+          const n0 = parsed.c.length;
+          const m = parsed.A.length;
+          const rows = [];
+          for (let i = 0; i < m; i++) {
+            let a = parsed.A[i].slice();
+            let rhs = parsed.b[i];
+            let typ = parsed.signs[i];
+            if (typ !== "<=" && typ !== ">=" && typ !== "=") typ = "<=";
+            if (rhs < -EPS) {
+              for (let j = 0; j < n0; j++) a[j] = -a[j];
+              rhs = -rhs;
+              if (typ === "<=") typ = ">=";
+              else if (typ === ">=") typ = "<=";
+            }
+            rows.push({ a, rhs, typ });
+          }
+
+          const colName = [];
+          for (let j = 0; j < n0; j++) colName.push("x" + (j + 1));
+          const slackIdx = [];
+          const artIdx = [];
+
+          for (let i = 0; i < m; i++) {
+            const r = rows[i];
+            if (r.typ === "<=") {
+              slackIdx.push(colName.length);
+              colName.push("s" + slackIdx.length);
+            } else if (r.typ === ">=") {
+              colName.push("e" + (i + 1));
+              artIdx.push(colName.length);
+              colName.push("a" + artIdx.length);
+            } else {
+              artIdx.push(colName.length);
+              colName.push("a" + artIdx.length);
+            }
+          }
+
+          const nCol = colName.length;
+          const T = [];
+          for (let i = 0; i < m; i++) {
+            const row = new Array(nCol + 1).fill(0);
+            const r = rows[i];
+            for (let j = 0; j < n0; j++) row[j] = r.a[j];
+            let k = n0;
+            for (let ii = 0; ii < i; ii++) {
+              const t2 = rows[ii].typ;
+              if (t2 === "<=") k += 1;
+              else if (t2 === ">=") k += 2;
+              else k += 1;
+            }
+            if (r.typ === "<=") row[k] = 1;
+            else if (r.typ === ">=") {
+              row[k] = -1;
+              row[k + 1] = 1;
+            } else row[k] = 1;
+            row[nCol] = r.rhs;
+            T.push(row);
+          }
+
+          const cRow = new Array(nCol + 1).fill(0);
+          const wRow = new Array(nCol + 1).fill(0);
+          for (const idx of artIdx) wRow[idx] = -1;
+
+          const basis = new Array(m);
+          let si = 0,
+            ai = 0;
+          for (let i = 0; i < m; i++) {
+            const r = rows[i].typ;
+            if (r === "<=") basis[i] = slackIdx[si++];
+            else basis[i] = artIdx[ai++];
+          }
+
+          for (let i = 0; i < m; i++) {
+            const bi = basis[i];
+            if (artIdx.indexOf(bi) >= 0) {
+              for (let j = 0; j <= nCol; j++) wRow[j] += T[i][j];
+            }
+          }
+
+          const hasPhase1 = artIdx.length > 0;
+          return {
+            T,
+            cRow,
+            wRow,
+            basis,
+            colName,
+            n0,
+            m,
+            nCol,
+            artIdx: artIdx.slice(),
+            phase: hasPhase1 ? 1 : 2,
+            maximize: parsed.maximize,
+          };
+        }
+
+        function tableauCellHtml(val, isPivot) {
+          const t = numStr(val);
+          if (isPivot) {
+            return (
+              '<td class="pivot"><span class="pivot-brak">[' +
+              escapeHtml(t) +
+              "]</span></td>"
+            );
+          }
+          return "<td>" + escapeHtml(t) + "</td>";
+        }
+
+        /** pivotPr / pivotPc 为主元所在行、列（展示主元前表时在 T[pivotPr][pivotPc] 标 []）；无则传 null */
+        function tableauToHtml(state, title, pivotPr, pivotPc) {
+          const { T, cRow, wRow, basis, colName, m, nCol, phase } = state;
+          const hasP =
+            pivotPr != null && pivotPc != null && pivotPr >= 0 && pivotPc >= 0;
+          let h =
+            '<div class="out-block tableau-block"><h4 class="tab-title">' +
+            escapeHtml(title) +
+            "</h4>";
+          h += '<table class="out-tableau"><thead><tr><th>基</th>';
+          for (let j = 0; j < nCol; j++)
+            h += "<th>" + escapeHtml(colName[j]) + "</th>";
+          h += "<th>RHS</th></tr></thead><tbody>";
+          for (let i = 0; i < m; i++) {
+            h += "<tr><th>" + escapeHtml(colName[basis[i]]) + "</th>";
+            for (let j = 0; j < nCol; j++) {
+              h += tableauCellHtml(
+                T[i][j],
+                hasP && pivotPr === i && pivotPc === j,
+              );
+            }
+            h += tableauCellHtml(
+              T[i][nCol],
+              hasP && pivotPr === i && pivotPc === nCol,
+            );
+            h += "</tr>";
+          }
+          if (phase === 1) {
+            h += '<tr class="obj-row"><th>G(-W)</th>';
+            for (let j = 0; j < nCol; j++) h += tableauCellHtml(wRow[j], false);
+            h += tableauCellHtml(wRow[nCol], false) + "</tr>";
+          } else {
+            h += '<tr class="obj-row"><th>z</th>';
+            for (let j = 0; j < nCol; j++) h += tableauCellHtml(cRow[j], false);
+            h += tableauCellHtml(cRow[nCol], false) + "</tr>";
+          }
+          h += "</tbody></table></div>";
+          return h;
+        }
+
+        function pivot(state, pr, pc) {
+          const { T, cRow, wRow, nCol, phase } = state;
+          const pe = T[pr][pc];
+          if (Math.abs(pe) < EPS) return false;
+          for (let j = 0; j <= nCol; j++) T[pr][j] /= pe;
+          const objRows = phase === 1 ? [wRow] : [cRow];
+          for (const r of objRows) {
+            const f = r[pc];
+            if (Math.abs(f) < EPS) continue;
+            for (let j = 0; j <= nCol; j++) r[j] -= f * T[pr][j];
+          }
+          for (let i = 0; i < T.length; i++) {
+            if (i === pr) continue;
+            const f = T[i][pc];
+            if (Math.abs(f) < EPS) continue;
+            for (let j = 0; j <= nCol; j++) T[i][j] -= f * T[pr][j];
+          }
+          state.basis[pr] = pc;
+          return true;
+        }
+
+        function chooseEntering(state) {
+          const row = state.phase === 1 ? state.wRow : state.cRow;
+          const { basis, nCol } = state;
+          const basic = {};
+          for (const b of basis) basic[b] = true;
+          let best = -1;
+          let bestj = -1;
+          for (let j = 0; j < nCol; j++) {
+            if (basic[j]) continue;
+            if (row[j] > TOL && row[j] > best) {
+              best = row[j];
+              bestj = j;
+            }
+          }
+          return bestj;
+        }
+
+        function chooseLeaving(state, enterCol) {
+          const { T, m, nCol, basis } = state;
+          let bestRatio = Infinity;
+          let bestRow = -1;
+          for (let i = 0; i < m; i++) {
+            const aik = T[i][enterCol];
+            if (aik <= EPS) continue;
+            const ratio = T[i][nCol] / aik;
+            if (
+              bestRow < 0 ||
+              ratio < bestRatio - EPS ||
+              (Math.abs(ratio - bestRatio) <= EPS && basis[i] < basis[bestRow])
+            ) {
+              bestRatio = ratio;
+              bestRow = i;
+            }
+          }
+          return bestRow;
+        }
+
+        function initPhase2Objective(state, parsed) {
+          const nCol = state.nCol;
+          const cRebuild = new Array(nCol + 1).fill(0);
+          for (let j = 0; j < state.n0; j++)
+            cRebuild[j] = parsed.maximize ? parsed.c[j] : -parsed.c[j];
+          state.cRow = cRebuild;
+          for (let i = 0; i < state.m; i++) {
+            const bv = state.basis[i];
+            const coef = state.cRow[bv];
+            if (Math.abs(coef) < EPS) continue;
+            for (let j = 0; j <= nCol; j++)
+              state.cRow[j] -= coef * state.T[i][j];
+          }
+        }
+
+        function extractPrimal(state, parsed) {
+          const x = new Array(parsed.c.length).fill(0);
+          for (let i = 0; i < state.m; i++) {
+            const col = state.basis[i];
+            if (col < state.n0) x[col] = state.T[i][state.nCol];
+          }
+          let z = 0;
+          for (let j = 0; j < parsed.c.length; j++) z += parsed.c[j] * x[j];
+          return { x, z };
+        }
+
+        function removeArtificialColumns(state) {
+          const kill = state.artIdx.slice().sort((a, b) => b - a);
+          for (const k of kill) {
+            for (let i = 0; i < state.T.length; i++) state.T[i].splice(k, 1);
+            state.cRow.splice(k, 1);
+            state.wRow.splice(k, 1);
+            state.colName.splice(k, 1);
+            for (let i = 0; i < state.basis.length; i++) {
+              if (state.basis[i] > k) state.basis[i]--;
+            }
+          }
+          state.nCol = state.colName.length;
+          state.artIdx = [];
+        }
+
+        function simplexSolve(parsed) {
+          const state = buildTableau(parsed);
+          let iter = 0;
+          const maxIter = 5000;
+          const htmlChunks = [];
+
+          if (state.phase === 1) {
+            htmlChunks.push(
+              tableauToHtml(
+                state,
+                "【初始表】第一阶段：行 G 表示极大化 G = -W（W 为人工变量之和），G_RHS = -W。",
+                null,
+                null,
+              ),
+            );
+          } else {
+            initPhase2Objective(state, parsed);
+            htmlChunks.push(
+              tableauToHtml(
+                state,
+                "【初始表】第二阶段（无人工变量，直接对原目标迭代）",
+                null,
+                null,
+              ),
+            );
+          }
+
+          while (iter++ < maxIter) {
+            if (state.phase === 1) {
+              const ev = chooseEntering(state);
+              if (ev < 0) {
+                if (state.wRow[state.nCol] < -TOL) {
+                  return {
+                    ok: false,
+                    reason:
+                      "第一阶段结束：无可行解（G_RHS = -W < 0，人工和无法为 0）",
+                    htmlChunks,
+                  };
+                }
+                htmlChunks.push(
+                  tableauToHtml(
+                    state,
+                    "【第一阶段结束】当前 G_RHS = " +
+                      numStr(state.wRow[state.nCol]) +
+                      "（=-W）。以下换出人工变量，方括号为主元。",
+                    null,
+                    null,
+                  ),
+                );
+                const artSet = {};
+                for (const a of state.artIdx) artSet[a] = true;
+                for (let i = 0; i < state.m; i++) {
+                  if (!artSet[state.basis[i]]) continue;
+                  let pc = -1;
+                  for (let j = 0; j < state.nCol; j++) {
+                    if (artSet[j]) continue;
+                    if (Math.abs(state.T[i][j]) > EPS) {
+                      pc = j;
+                      break;
+                    }
+                  }
+                  if (pc < 0) continue;
+                  htmlChunks.push(
+                    tableauToHtml(
+                      state,
+                      "【将人工变量换出基】行 " +
+                        (i + 1) +
+                        "，进基列 " +
+                        state.colName[pc],
+                      i,
+                      pc,
+                    ),
+                  );
+                  if (!pivot(state, i, pc))
+                    return {
+                      ok: false,
+                      reason: "驱人工变量时主元失败",
+                      htmlChunks,
+                    };
+                }
+                removeArtificialColumns(state);
+                state.phase = 2;
+                initPhase2Objective(state, parsed);
+                htmlChunks.push(
+                  tableauToHtml(
+                    state,
+                    "【第二阶段初始】已删人工列，z 行对当前基典则化",
+                    null,
+                    null,
+                  ),
+                );
+                continue;
+              }
+              const lv = chooseLeaving(state, ev);
+              if (lv < 0) {
+                return {
+                  ok: false,
+                  reason: "第一阶段：子问题无界（极少见）",
+                  htmlChunks,
+                };
+              }
+              const theta = state.T[lv][state.nCol] / state.T[lv][ev];
+              htmlChunks.push(
+                tableauToHtml(
+                  state,
+                  "【迭代 " +
+                    iter +
+                    " · 第一阶段】进基 " +
+                    state.colName[ev] +
+                    "，离基行 " +
+                    (lv + 1) +
+                    "，θ_min = " +
+                    numStr(theta),
+                  lv,
+                  ev,
+                ),
+              );
+              if (!pivot(state, lv, ev))
+                return { ok: false, reason: "主元失败", htmlChunks };
+              continue;
+            }
+
+            const ev2 = chooseEntering(state);
+            if (ev2 < 0) {
+              htmlChunks.push(
+                tableauToHtml(
+                  state,
+                  "【最优单纯形表】（当前检验数均≤0）",
+                  null,
+                  null,
+                ),
+              );
+              const { x, z } = extractPrimal(state, parsed);
+              return { ok: true, z, x, htmlChunks };
+            }
+            const lv2 = chooseLeaving(state, ev2);
+            if (lv2 < 0) {
+              return {
+                ok: false,
+                reason: "第二阶段：非基变量进基后比值均非正，目标无界",
+                htmlChunks,
+                unbounded: true,
+              };
+            }
+            const theta2 = state.T[lv2][state.nCol] / state.T[lv2][ev2];
+            htmlChunks.push(
+              tableauToHtml(
+                state,
+                "【迭代 " +
+                  iter +
+                  " · 第二阶段】进基 " +
+                  state.colName[ev2] +
+                  "，离基行 " +
+                  (lv2 + 1) +
+                  "，θ_min = " +
+                  numStr(theta2),
+                lv2,
+                ev2,
+              ),
+            );
+            if (!pivot(state, lv2, ev2))
+              return { ok: false, reason: "主元失败", htmlChunks };
+          }
+          return { ok: false, reason: "超过最大迭代次数", htmlChunks };
+        }
+
+        function onLpSolve() {
+          clearOut();
+          try {
+            const parsed = readLpFromTable();
+            appendHtml(
+              '<div class="out-block"><h3>手写两阶段单纯形（表格数据）</h3></div>',
+            );
+            const r = simplexSolve(parsed);
+            for (let i = 0; i < r.htmlChunks.length; i++)
+              appendHtml(r.htmlChunks[i]);
+            if (r.ok) {
+              let txt = ">>> 最优目标值（单纯形）: " + numStr(r.z) + "\n";
+              for (let j = 0; j < r.x.length; j++)
+                txt += "    x" + (j + 1) + " = " + numStr(r.x[j]) + "\n";
+              appendHtml(
+                '<div class="out-block"><pre class="out-pre">' +
+                  escapeHtml(txt) +
+                  "</pre></div>",
+              );
+              lastLp = {
+                c: parsed.c.slice(),
+                A: parsed.A.map((row) => row.slice()),
+                b: parsed.b.slice(),
+                signs: parsed.signs.slice(),
+                maximize: parsed.maximize,
+                x: r.x.slice(),
+              };
+            } else {
+              appendHtml(
+                '<div class="out-block"><pre class="out-pre">' +
+                  escapeHtml(">>> " + r.reason) +
+                  "</pre></div>",
+              );
+              lastLp = null;
+            }
+            appendHtml('<div class="out-block" style="margin-top:1rem"></div>');
+            solveFromRawLp(parsed, !r.ok);
+          } catch (e) {
+            appendHtml(
+              '<div class="out-block"><pre class="out-pre">' +
+                escapeHtml("错误: " + e.message) +
+                "</pre></div>",
+            );
+          }
+          renderPostAuxTables();
+        }
+
+        function renderTpTable() {
+          const m = Math.max(
+            1,
+            Math.min(25, parseInt($("tp_m").value, 10) || 2),
+          );
+          const n = Math.max(
+            1,
+            Math.min(25, parseInt($("tp_n").value, 10) || 2),
+          );
+          $("tp_m").value = String(m);
+          $("tp_n").value = String(n);
+          const wrap = $("tp_table_wrap");
+          let html = '<table class="lpgrid tp-unified"><thead><tr><th></th>';
+          for (let j = 0; j < n; j++) html += "<th>销地" + (j + 1) + "</th>";
+          html += "<th>产量 a<sub>i</sub></th></tr></thead><tbody>";
+          for (let i = 0; i < m; i++) {
+            html += "<tr><th>产地" + (i + 1) + "</th>";
+            for (let j = 0; j < n; j++) {
+              html +=
+                '<td><input type="text" class="tp_c" data-i="' +
+                i +
+                '" data-j="' +
+                j +
+                '" value="0" /></td>';
+            }
+            html +=
+              '<td><input type="text" class="tp_a" data-i="' +
+              i +
+              '" value="0" /></td></tr>';
+          }
+          html += "<tr><th>销量 b<sub>j</sub></th>";
+          for (let j = 0; j < n; j++) {
+            html +=
+              '<td><input type="text" class="tp_b" data-j="' +
+              j +
+              '" value="0" /></td>';
+          }
+          html += '<td class="tp-corner">—</td></tr></tbody></table>';
+          wrap.innerHTML = html;
+        }
+
+        function readTransportFromTable() {
+          const m = parseInt($("tp_m").value, 10) || 1;
+          const n = parseInt($("tp_n").value, 10) || 1;
+          const costs = [];
+          for (let i = 0; i < m; i++) {
+            const row = [];
+            for (let j = 0; j < n; j++) {
+              const el = document.querySelector(
+                '#tp_table_wrap .tp_c[data-i="' + i + '"][data-j="' + j + '"]',
+              );
+              const v = Number(String(el && el.value).replace(/,/g, ""));
+              if (!isFinite(v))
+                throw new Error("运价 (" + (i + 1) + "," + (j + 1) + ") 无效");
+              row.push(v);
+            }
+            costs.push(row);
+          }
+          const supply = [];
+          for (let i = 0; i < m; i++) {
+            const el = document.querySelector(
+              '#tp_table_wrap .tp_a[data-i="' + i + '"]',
+            );
+            const v = Number(String(el && el.value).replace(/,/g, ""));
+            if (!isFinite(v)) throw new Error("产量 " + (i + 1) + " 无效");
+            supply.push(v);
+          }
+          const demand = [];
+          for (let j = 0; j < n; j++) {
+            const el = document.querySelector(
+              '#tp_table_wrap .tp_b[data-j="' + j + '"]',
+            );
+            const v = Number(String(el && el.value).replace(/,/g, ""));
+            if (!isFinite(v)) throw new Error("销量 " + (j + 1) + " 无效");
+            demand.push(v);
+          }
+          return { costs, supply, demand, m, n };
+        }
+
+        function htmlTransportResult(plan, mm, nn, objVal) {
+          let h =
+            '<div class="out-block tableau-block"><h4 class="tab-title">最优运输量 x<sub>ij</sub></h4>';
+          h += '<table class="out-tableau"><thead><tr><th></th>';
+          for (let j = 0; j < nn; j++) h += "<th>销" + (j + 1) + "</th>";
+          h += "</tr></thead><tbody>";
+          for (let i = 0; i < mm; i++) {
+            h += "<tr><th>产" + (i + 1) + "</th>";
+            for (let j = 0; j < nn; j++)
+              h += "<td>" + escapeHtml(numStr(plan[i][j])) + "</td>";
+            h += "</tr>";
+          }
+          h += "</tbody></table>";
+          h +=
+            '<p class="hint" style="margin:0.5rem 0 0">最小总运费 <strong>Z*</strong> = ' +
+            escapeHtml(numStr(objVal)) +
+            "</p></div>";
+          return h;
+        }
+
+        function onTpSolve() {
+          clearOut();
+          try {
+            const { costs, supply, demand, m, n } = readTransportFromTable();
+            const t = transportToLp(costs, supply, demand);
+            if (!solver || typeof solver.Solve !== "function") {
+              appendHtml(
+                '<div class="out-block"><pre class="out-pre">' +
+                  escapeHtml("错误：未加载 javascript-lp-solver") +
+                  "</pre></div>",
+              );
+              return;
+            }
+            const model = buildJsLpModel(
+              t.c,
+              t.A_ub,
+              t.b_ub,
+              t.A_eq,
+              t.b_eq,
+              t.maximize,
+            );
+            const res = runSolve(model);
+            if (
+              !printSolution(
+                "运输问题（javascript-lp-solver）",
+                res,
+                t.c.length,
+              )
+            )
+              return;
+            const mm = t.dim.m,
+              nn = t.dim.n;
+            const x = extractX(res, mm * nn);
+            const plan = [];
+            for (let i = 0; i < mm; i++) {
+              const row = [];
+              for (let j = 0; j < nn; j++) row.push(x[i * nn + j]);
+              plan.push(row);
+            }
+            appendHtml(htmlTransportResult(plan, mm, nn, res.result));
+          } catch (e) {
+            appendHtml(
+              '<div class="out-block"><pre class="out-pre">' +
+                escapeHtml("错误: " + e.message) +
+                "</pre></div>",
+            );
+          }
+        }
+
+        function onPost() {
+          clearOut();
+          if (!lastLp) {
+            appendHtml(
+              '<div class="out-block"><p class="err-out">请先在「标准线性规划」中求解成功后再使用本模块。</p></div>',
+            );
+            return;
+          }
+          const chk = (id) => $(id).checked;
+          if (
+            ![
+              "chk_sa",
+              "chk_c_range",
+              "chk_c_solve",
+              "chk_b_range",
+              "chk_b_solve",
+              "chk_new_row",
+              "chk_new_col",
+            ].some((id) => chk(id))
+          ) {
+            appendHtml(
+              '<div class="out-block"><p class="err-out">请至少勾选一项任务。</p></div>',
+            );
+            return;
+          }
+          try {
+            appendHtml(
+              '<div class="out-block"><h3>灵敏度与后优化 · 输出</h3></div>',
+            );
+            let c, A, b, signs, maximize;
+            function loadFromLast() {
+              c = lastLp.c.slice();
+              A = lastLp.A.map((r) => r.slice());
+              b = lastLp.b.slice();
+              signs = lastLp.signs.slice();
+              maximize = lastLp.maximize;
+            }
+            loadFromLast();
+
+            if (chk("chk_sa")) {
+              const g = generalToLinprog(c, A, b, signs);
+              sensitivityAnalysisJs(
+                g.c,
+                g.A_ub,
+                g.b_ub,
+                g.A_eq,
+                g.b_eq,
+                maximize,
+              );
+            }
+            if (chk("chk_c_range")) {
+              loadFromLast();
+              const nn = c.length;
+              const j = parseInt($("post_j").value, 10) - 1;
+              if (j < 0 || j >= nn) throw new Error("j 须在 1～" + nn);
+              coefficientRangeSameSolutionJs(j);
+            }
+            if (chk("chk_c_solve")) {
+              loadFromLast();
+              const nn = c.length;
+              const j = parseInt($("post_j").value, 10) - 1;
+              if (j < 0 || j >= nn) throw new Error("j 须在 1～" + nn);
+              const tnc = $("post_new_c").value.trim();
+              if (!tnc) throw new Error("请填写新 c_j");
+              c[j] = Number(tnc);
+              solveFromRawLp({ c, A, b, signs, maximize });
+              loadFromLast();
+            }
+            if (chk("chk_b_range")) {
+              loadFromLast();
+              rhsRangeStub();
+            }
+            if (chk("chk_b_solve")) {
+              loadFromLast();
+              const mm = b.length;
+              const i0 = parseInt($("post_i").value, 10) - 1;
+              if (i0 < 0 || i0 >= mm) throw new Error("i 须在 1～" + mm);
+              const tnb = $("post_new_b").value.trim();
+              if (!tnb) throw new Error("请填写新 b_i");
+              b[i0] = Number(tnb);
+              solveFromRawLp({ c, A, b, signs, maximize });
+              loadFromLast();
+            }
+            if (chk("chk_new_row")) {
+              loadFromLast();
+              const nn = c.length;
+              const nr = readPostNewRowFromTable(nn);
+              A.push(nr.row);
+              b.push(nr.rhs);
+              signs.push(nr.sign);
+              solveFromRawLp({ c, A, b, signs, maximize });
+              loadFromLast();
+            }
+            if (chk("chk_new_col")) {
+              loadFromLast();
+              const mm = A.length;
+              const { p, cvar } = readPostNewColFromTable(mm);
+              for (let i = 0; i < mm; i++) A[i].push(p[i]);
+              c.push(cvar);
+              solveFromRawLp({ c, A, b, signs, maximize });
+              loadFromLast();
+            }
+          } catch (e) {
+            appendHtml(
+              '<div class="out-block"><p class="err-out">' +
+                escapeHtml("错误: " + e.message) +
+                "</p></div>",
+            );
+          }
+          renderPostAuxTables();
+        }
+
+        function fillTpTableExample() {
+          $("tp_m").value = "2";
+          $("tp_n").value = "3";
+          renderTpTable();
+          const cmat = [
+            [1, 2, 3],
+            [2, 2, 1],
+          ];
+          const sup = [10, 15];
+          const dem = [8, 9, 8];
+          for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < 3; j++) {
+              const el = document.querySelector(
+                '.tp_c[data-i="' + i + '"][data-j="' + j + '"]',
+              );
+              if (el) el.value = String(cmat[i][j]);
+            }
+          }
+          for (let i = 0; i < 2; i++) {
+            const el = document.querySelector('.tp_a[data-i="' + i + '"]');
+            if (el) el.value = String(sup[i]);
+          }
+          for (let j = 0; j < 3; j++) {
+            const el = document.querySelector('.tp_b[data-j="' + j + '"]');
+            if (el) el.value = String(dem[j]);
+          }
+        }
+
+        function init() {
+          if (!solver || typeof solver.Solve !== "function") {
+            statusEl.textContent =
+              "警告：javascript-lp-solver 未加载；单纯形仍可运行，运输与对照求解不可用。";
+          } else {
+            statusEl.textContent =
+              "表格录入；单纯形迭代与运输结果为 HTML 表，主元以 [] 标出。";
+          }
+          fillTpTableExample();
+          fillLpTableExample();
+          $("btn_lp_resize").addEventListener("click", function () {
+            renderLpTable();
+            renderPostAuxTables();
+          });
+          $("btn_lp_fill").addEventListener("click", fillLpTableExample);
+          $("btn_lp_solve").addEventListener("click", onLpSolve);
+          $("btn_tp_resize").addEventListener("click", renderTpTable);
+          $("btn_tp_fill").addEventListener("click", fillTpTableExample);
+          $("btn_tp_solve").addEventListener("click", onTpSolve);
+          $("btn_post").addEventListener("click", onPost);
+        }
+
+        init();
+      })();
+    </script>
+  </body>
+</html>

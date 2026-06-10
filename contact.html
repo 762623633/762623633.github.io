@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>联系我们 — 石家庄正和网络有限公司</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">&#9851;</div>
+      <span>正和网络</span>
+    </a>
+    <nav class="nav">
+      <a href="index.html">首页</a>
+      <a href="about.html">关于我们</a>
+      <a href="services.html">业务服务</a>
+      <a href="cases.html">项目案例</a>
+      <a href="news.html">新闻资讯</a>
+      <a href="contact.html" class="active">联系我们</a>
+    </nav>
+    <div class="hamburger">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</header>
+
+<div class="page-header">
+  <div class="container">
+    <h1>联系我们</h1>
+    <div class="breadcrumb"><a href="index.html">首页</a> / 联系我们</div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-info">
+        <h3>联系方式</h3>
+        <div class="contact-item">
+          <div class="contact-icon">&#128222;</div>
+          <div>
+            <h4>电话咨询</h4>
+            <p>0311-8888-8888<br>工作日 9:00-18:00</p>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">&#9993;</div>
+          <div>
+            <h4>邮箱</h4>
+            <p>info@zhenghe.com<br>business@zhenghe.com</p>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">&#128205;</div>
+          <div>
+            <h4>地址</h4>
+            <p>河北省石家庄市高新区<br>天山大街与黄河大道交口科技园A座12层</p>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">&#128172;</div>
+          <div>
+            <h4>微信</h4>
+            <p>搜索公众号"正和网络"关注<br>或扫描下方二维码</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-size:24px;margin-bottom:24px;">在线留言</h3>
+        <form class="contact-form" id="contactForm">
+          <input type="text" name="name" placeholder="您的姓名 *" required>
+          <input type="tel" name="phone" placeholder="联系电话 *" required>
+          <input type="email" name="email" placeholder="电子邮箱">
+          <input type="text" name="company" placeholder="公司名称">
+          <textarea name="message" placeholder="请描述您的需求或问题..." required></textarea>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">提交留言 &#10140;</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-light">
+  <div class="container">
+    <div class="map">
+      <div style="text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">&#128506;</div>
+        <p>地图加载中...（实际部署时可接入高德/百度地图API）</p>
+        <p style="font-size:13px;">石家庄市高新区天山大街与黄河大道交口</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>&#9851; 正和网络</h4>
+        <p>石家庄正和网络有限公司<br>互联网+再生资源综合服务提供商<br>以科技推动资源循环，以创新引领绿色发展。</p>
+      </div>
+      <div>
+        <h4>快速链接</h4>
+        <ul>
+          <li><a href="index.html">首页</a></li>
+          <li><a href="about.html">关于我们</a></li>
+          <li><a href="services.html">业务服务</a></li>
+          <li><a href="cases.html">项目案例</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>服务项目</h4>
+        <ul>
+          <li><a href="services.html">智能回收</a></li>
+          <li><a href="services.html">数据分析</a></li>
+          <li><a href="services.html">绿色供应链</a></li>
+          <li><a href="services.html">碳中和服务</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>联系方式</h4>
+        <ul>
+          <li>电话：0311-8888-8888</li>
+          <li>邮箱：info@zhenghe.com</li>
+          <li>地址：石家庄市高新区</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 石家庄正和网络有限公司 版权所有 | 冀ICP备XXXXXXXX号
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  alert('感谢您的留言！我们会尽快与您联系。');
+  this.reset();
+});
+</script>
+</body>
+</html>
